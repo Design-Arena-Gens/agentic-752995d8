@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation Bias - Motion Graphics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 1080px;
+            max-height: 1920px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .scene.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .text {
+            color: #fff;
+            text-align: center;
+            padding: 20px 40px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            line-height: 1.4;
+        }
+
+        .text.small {
+            font-size: 2rem;
+        }
+
+        .text.highlight {
+            color: #00f5ff;
+            text-shadow: 0 0 20px #00f5ff, 0 0 30px #00f5ff;
+        }
+
+        .text.warning {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px #ff6b6b, 0 0 30px #ff6b6b;
+        }
+
+        .text.gold {
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700, 0 0 30px #ffd700;
+        }
+
+        /* Particle effects */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            animation: float 3s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(20px); }
+        }
+
+        /* Graph animation */
+        .graph-container {
+            width: 80%;
+            height: 300px;
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .graph-line {
+            stroke: #00f5ff;
+            stroke-width: 4;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            filter: drop-shadow(0 0 10px #00f5ff);
+        }
+
+        .graph-line.animate {
+            animation: drawLine 2s forwards;
+        }
+
+        .graph-line.red {
+            stroke: #ff6b6b;
+            filter: drop-shadow(0 0 10px #ff6b6b);
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Icon animations */
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* CTA Button */
+        .cta {
+            margin-top: 40px;
+            padding: 20px 50px;
+            font-size: 2rem;
+            background: linear-gradient(45deg, #00f5ff, #0066ff);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            animation: glow 2s infinite;
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 245, 255, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(0, 245, 255, 0.8); }
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #00f5ff, #ffd700);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Audio control */
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #00f5ff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #00f5ff;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-control:hover {
+            background: rgba(0, 245, 255, 0.2);
+        }
+
+        /* Word reveal animation */
+        .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: wordReveal 0.5s forwards;
+        }
+
+        @keyframes wordReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas">
+        <div class="particles" id="particles"></div>
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="audio-control" id="audioControl" onclick="toggleAudio()">🔊</div>
+
+        <!-- Scene 1: Opening Hook -->
+        <div class="scene" id="scene1">
+            <div class="icon">🤔</div>
+            <div class="text highlight">क्या आपको पता है?</div>
+        </div>
+
+        <!-- Scene 2: Problem Statement 1 -->
+        <div class="scene" id="scene2">
+            <div class="text">मार्केट में नुकसान सिर्फ़ कीमतों में<br>उतार-चढ़ाव की वजह से नहीं होता।</div>
+            <svg class="graph-container" viewBox="0 0 400 200">
+                <polyline class="graph-line" id="graphLine1" points="0,100 50,80 100,120 150,90 200,140 250,110 300,150 350,130 400,170"/>
+            </svg>
+        </div>
+
+        <!-- Scene 3: Problem Statement 2 -->
+        <div class="scene" id="scene3">
+            <div class="icon">🧠</div>
+            <div class="text warning">यह गलत सोच की वजह से<br>भी होता है।</div>
+        </div>
+
+        <!-- Scene 4: Setup -->
+        <div class="scene" id="scene4">
+            <div class="text small">जब हम सिर्फ़ वही खबरें देखते हैं<br>जो हमारे पहले से माने हुए<br>विश्वास को कन्फर्म करती हैं…</div>
+        </div>
+
+        <!-- Scene 5: Key Concept -->
+        <div class="scene" id="scene5">
+            <div class="icon">⚠️</div>
+            <div class="text highlight" style="font-size: 3.5rem;">इसे कहते हैं—<br><span style="font-size: 4rem;">कन्फर्मेशन बायस</span></div>
+        </div>
+
+        <!-- Scene 6: Consequence 1 -->
+        <div class="scene" id="scene6">
+            <div class="icon">🙈</div>
+            <div class="text">इस बायस में, इन्वेस्टर<br>चेतावनी के संकेतों को<br><span class="warning">neglect</span> कर देता है।</div>
+        </div>
+
+        <!-- Scene 7: Consequence 2 -->
+        <div class="scene" id="scene7">
+            <div class="text warning">और जब मार्केट उल्टा हो जाता है…</div>
+            <svg class="graph-container" viewBox="0 0 400 200">
+                <polyline class="graph-line red" id="graphLine2" points="0,50 50,60 100,40 150,80 200,90 250,130 300,150 350,170 400,180"/>
+            </svg>
+        </div>
+
+        <!-- Scene 8: Regret -->
+        <div class="scene" id="scene8">
+            <div class="icon">😰</div>
+            <div class="text warning">तभी पछतावा शुरू होता है।</div>
+        </div>
+
+        <!-- Scene 9: Solution Intro -->
+        <div class="scene" id="scene9">
+            <div class="icon">💡</div>
+            <div class="text gold">स्मार्ट इन्वेस्टिंग का<br>नियम आसान है—</div>
+        </div>
+
+        <!-- Scene 10: Key Lesson -->
+        <div class="scene" id="scene10">
+            <div class="text gold" style="font-size: 3rem;">राय को फॉलो न करें,<br><br><span style="font-size: 3.5rem;">प्रोसेस को फॉलो करें।</span></div>
+        </div>
+
+        <!-- Scene 11: CTA -->
+        <div class="scene" id="scene11">
+            <div class="text">क्या आप कभी<br>इस जाल में फंसे हैं?</div>
+            <div class="cta" style="margin-right: 20px; display: inline-block;">YES</div>
+            <div class="cta" style="display: inline-block;">NO</div>
+            <div class="text small" style="margin-top: 30px;">कमेंट करें</div>
+        </div>
+    </div>
+
+    <script>
+        // Scene management
+        const scenes = document.querySelectorAll('.scene');
+        let currentScene = 0;
+        const sceneDurations = [3000, 4000, 3500, 4000, 4000, 4000, 3500, 3000, 3000, 4000, 5000];
+        let isPlaying = true;
+        let animationInterval;
+
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Show scene
+        function showScene(index) {
+            scenes.forEach(s => s.classList.remove('active'));
+            if (index < scenes.length) {
+                scenes[index].classList.add('active');
+
+                // Animate graphs
+                if (index === 1) {
+                    document.getElementById('graphLine1').classList.add('animate');
+                }
+                if (index === 6) {
+                    document.getElementById('graphLine2').classList.add('animate');
+                }
+
+                // Update progress bar
+                const progress = ((index + 1) / scenes.length) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+
+                // Animate words
+                const textElement = scenes[index].querySelector('.text');
+                if (textElement) {
+                    const words = textElement.innerHTML.split(' ');
+                    textElement.innerHTML = words.map((word, i) =>
+                        `<span class="word" style="animation-delay: ${i * 0.1}s">${word}</span>`
+                    ).join(' ');
+                }
+            }
+        }
+
+        // Auto-play animation
+        function startAnimation() {
+            showScene(currentScene);
+
+            function nextScene() {
+                if (!isPlaying) return;
+
+                currentScene++;
+                if (currentScene < scenes.length) {
+                    showScene(currentScene);
+                    animationInterval = setTimeout(nextScene, sceneDurations[currentScene] || 3000);
+                } else {
+                    // Loop animation
+                    currentScene = 0;
+                    setTimeout(() => startAnimation(), 2000);
+                }
+            }
+
+            animationInterval = setTimeout(nextScene, sceneDurations[0]);
+        }
+
+        // Audio control (placeholder)
+        function toggleAudio() {
+            isPlaying = !isPlaying;
+            document.getElementById('audioControl').textContent = isPlaying ? '🔊' : '🔇';
+
+            if (isPlaying) {
+                startAnimation();
+            } else {
+                clearTimeout(animationInterval);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                clearTimeout(animationInterval);
+                currentScene = Math.min(currentScene + 1, scenes.length - 1);
+                showScene(currentScene);
+            } else if (e.key === 'ArrowLeft') {
+                clearTimeout(animationInterval);
+                currentScene = Math.max(currentScene - 1, 0);
+                showScene(currentScene);
+            } else if (e.key === ' ') {
+                toggleAudio();
+            }
+        });
+
+        // Initialize
+        createParticles();
+        startAnimation();
+
+        // Touch support for mobile
+        let touchStartX = 0;
+        document.getElementById('canvas').addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.getElementById('canvas').addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > 50) {
+                clearTimeout(animationInterval);
+                if (diff > 0) {
+                    currentScene = Math.min(currentScene + 1, scenes.length - 1);
+                } else {
+                    currentScene = Math.max(currentScene - 1, 0);
+                }
+                showScene(currentScene);
+            }
+        });
+    </script>
+</body>
+</html>
